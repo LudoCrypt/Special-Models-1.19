@@ -1,0 +1,24 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "net.ludocrypt.specialmodels.impl.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"mixins": [
+	],
+	"client": [
+		"model.BakedModelMixin",
+		"model.GeneralBakedModelMixin",
+		"model.JsonUnbakedModelDeserializerMixin",
+		"model.JsonUnbakedModelMixin",
+		"model.MultipartBakedModelMixin",
+		"render.GameRendererMixin",
+		"render.VertexBufferAccessor",
+		"render.WorldRendererAfterMixin",
+		"render.WorldRendererBeforeMixin",
+		"render.WorldRendererChunkMixin",
+		"render.WorldRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
