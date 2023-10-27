@@ -45,90 +45,66 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockView;
-import net.minecraft.world.chunk.light.LightingProvider;
 
 @Mixin(WorldRenderer.class)
 public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 
 	@Shadow
 	private ClientWorld world;
-
 	@Shadow
 	@Final
 	private MinecraftClient client;
-
 	@Shadow
 	private int viewDistance;
-
 	@Shadow
 	@Final
 	private static double CEIL_CUBEROOT_3_TIMES_16;
-
 	@Unique
 	private SpecialChunkBuilder specialChunkBuilder;
-
 	@Unique
 	private Future<?> lastFullSpecialBuiltChunkUpdate;
-
 	@Unique
 	private final BlockingQueue<SpecialChunkBuilder.BuiltChunk> recentlyCompiledSpecialChunks = new LinkedBlockingQueue<BuiltChunk>();
-
 	@Unique
 	private final AtomicReference<SpecialChunkBuilder.RenderableChunks> renderableSpecialChunks = new AtomicReference<RenderableChunks>();
-
 	@Unique
 	private final ObjectArrayList<SpecialChunkBuilder.ChunkInfo> specialChunkInfoList = new ObjectArrayList<>(10000);
-
 	@Unique
 	private SpecialBuiltChunkStorage specialChunks;
-
 	@Unique
 	private SpecialBufferBuilderStorage specialBufferBuilderStorage = new SpecialBufferBuilderStorage();
-
 	@Unique
 	private boolean needsFullSpecialBuiltChunkUpdate = true;
-
 	@Unique
 	private final AtomicBoolean needsSpecialFrustumUpdate = new AtomicBoolean(false);
-
 	@Unique
 	private final AtomicLong nextFullSpecialUpdateMilliseconds = new AtomicLong(0L);
-
 	@Unique
 	private int cameraSpecialChunkX = Integer.MIN_VALUE;
-
 	@Unique
 	private int cameraSpecialChunkY = Integer.MIN_VALUE;
-
 	@Unique
 	private int cameraSpecialChunkZ = Integer.MIN_VALUE;
-
 	@Unique
 	private double lastSpecialCameraX = Double.MIN_VALUE;
-
 	@Unique
 	private double lastSpecialCameraY = Double.MIN_VALUE;
-
 	@Unique
 	private double lastSpecialCameraZ = Double.MIN_VALUE;
-
 	@Unique
 	private double lastSpecialCameraPitch = Double.MIN_VALUE;
-
 	@Unique
 	private double lastSpecialCameraYaw = Double.MIN_VALUE;
-
 	@Unique
 	private double lastSpecialSortX;
-
 	@Unique
 	private double lastSpecialSortY;
-
 	@Unique
 	private double lastSpecialSortZ;
 
@@ -158,6 +134,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 		if (this.client.getBakedModelManager().shouldRerender(old, updated)) {
 			this.scheduleSpecialBlockRenders(pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
 		}
+
 	}
 
 	@Inject(method = "scheduleTerrainUpdate", at = @At("TAIL"))
@@ -174,8 +151,11 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				for (int k = pos.getY() - 1; k <= pos.getY() + 1; ++k) {
 					this.scheduleSpecialChunkRender(ChunkSectionPos.getSectionCoord(j), ChunkSectionPos.getSectionCoord(k), ChunkSectionPos.getSectionCoord(i), important);
 				}
+
 			}
+
 		}
+
 	}
 
 	public void scheduleSpecialBlockRenders(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
@@ -187,8 +167,11 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				for (int k = minY - 1; k <= maxY + 1; ++k) {
 					this.scheduleSpecialBlockRender(ChunkSectionPos.getSectionCoord(j), ChunkSectionPos.getSectionCoord(k), ChunkSectionPos.getSectionCoord(i));
 				}
+
 			}
+
 		}
+
 	}
 
 	public void scheduleSpecialBlockRenders(int x, int y, int z) {
@@ -200,8 +183,11 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				for (int k = y - 1; k <= y + 1; ++k) {
 					this.scheduleSpecialBlockRender(j, k, i);
 				}
+
 			}
+
 		}
+
 	}
 
 	public void scheduleSpecialBlockRender(int x, int y, int z) {
@@ -232,6 +218,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 		} else {
 			this.reloadSpecial();
 		}
+
 	}
 
 	@Override
@@ -246,16 +233,15 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			}
 
 			this.needsFullSpecialBuiltChunkUpdate = true;
-
 			this.recentlyCompiledSpecialChunks.clear();
 			RenderLayers.setFancyGraphicsOrBetter(MinecraftClient.isFancyGraphicsOrBetter());
+			this.viewDistance = this.client.options.getEffectiveViewDistance();
 
 			if (this.specialChunks != null) {
 				this.specialChunks.clear();
 			}
 
 			this.specialChunkBuilder.reset();
-
 			this.specialChunks = new SpecialBuiltChunkStorage(this.specialChunkBuilder, this.world, this.client.options.getEffectiveViewDistance(), ((WorldRenderer) (Object) this));
 
 			if (this.lastFullSpecialBuiltChunkUpdate != null) {
@@ -263,8 +249,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				try {
 					this.lastFullSpecialBuiltChunkUpdate.get();
 					this.lastFullSpecialBuiltChunkUpdate = null;
-				} catch (Exception var3) {
-				}
+				} catch (Exception var3) {}
+
 			}
 
 			this.renderableSpecialChunks.set(new SpecialChunkBuilder.RenderableChunks(this.specialChunks.chunks.length));
@@ -274,7 +260,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			if (entity != null) {
 				this.specialChunks.updateCameraPosition(entity.getX(), entity.getZ());
 			}
+
 		}
+
 	}
 
 	@Override
@@ -316,6 +304,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			} else {
 				return lx;
 			}
+
 		});
 		this.lastSpecialCameraX = g;
 		this.lastSpecialCameraY = h;
@@ -357,6 +346,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 					if (chunkInfo != null && chunkInfo.chunk == builtChunk) {
 						queue.add(chunkInfo);
 					}
+
 				}
 
 				this.updateSpecialBuiltChunks(renderableChunks.builtChunks, renderableChunks.builtChunkMap, vec3d, queue, bl);
@@ -372,6 +362,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				this.lastSpecialCameraPitch = m;
 				this.lastSpecialCameraYaw = n;
 			}
+
 		}
 
 		this.client.getProfiler().pop();
@@ -398,7 +389,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 					if (builtChunk2 != null) {
 						list.add(new SpecialChunkBuilder.ChunkInfo(builtChunk2, null, 0));
 					}
+
 				}
+
 			}
 
 			list.sort(Comparator.comparingDouble(chunkInfo -> blockPos.getSquaredDistance(chunkInfo.chunk.getOrigin().add(8, 8, 8))));
@@ -406,6 +399,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 		} else {
 			chunkInfoQueue.add(new SpecialChunkBuilder.ChunkInfo(builtChunk, null, 0));
 		}
+
 	}
 
 	@Override
@@ -443,11 +437,13 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 								bl2 = true;
 								break;
 							}
+
 						}
 
 						if (!bl2) {
 							continue;
 						}
+
 					}
 
 					if (chunkCullingEnabled && bl) {
@@ -464,6 +460,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 									if (blockPos2.getX() > blockPos3.getX()) {
 										break label125;
 									}
+
 								} else if (blockPos2.getX() < blockPos3.getX()) {
 									break label125;
 								}
@@ -486,6 +483,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 									if (blockPos2.getY() > blockPos3.getY()) {
 										break label117;
 									}
+
 								} else if (blockPos2.getY() < blockPos3.getY()) {
 									break label117;
 								}
@@ -508,6 +506,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 									if (blockPos2.getZ() > blockPos3.getZ()) {
 										break label109;
 									}
+
 								} else if (blockPos2.getZ() < blockPos3.getZ()) {
 									break label109;
 								}
@@ -537,11 +536,13 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 								bl3 = false;
 								break;
 							}
+
 						}
 
 						if (!bl3) {
 							continue;
 						}
+
 					}
 
 					ChunkInfo chunkInfo2 = builtChunkMap.getInfo(builtChunk2);
@@ -553,14 +554,18 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 						if (!this.isSpecialChunkNearMaxViewDistance(blockPos, builtChunk)) {
 							this.nextFullSpecialUpdateMilliseconds.set(System.currentTimeMillis() + 500L);
 						}
+
 					} else {
 						ChunkInfo chunkInfo3 = new ChunkInfo(builtChunk2, direction, chunkInfo.propagationLevel + 1);
 						chunkInfo3.updateCullingState(chunkInfo.cullingState, direction);
 						chunksToBuild.add(chunkInfo3);
 						builtChunkMap.setInfo(builtChunk2, chunkInfo3);
 					}
+
 				}
+
 			}
+
 		}
 
 	}
@@ -577,6 +582,7 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 		} else {
 			return MathHelper.abs(pos.getZ() - blockPos.getZ()) > this.viewDistance * 16 ? null : this.specialChunks.getRenderedChunk(blockPos);
 		}
+
 	}
 
 	@Override
@@ -613,32 +619,37 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				if (frustum.isVisible(chunkInfo.chunk.getBoundingBox())) {
 					this.specialChunkInfoList.add(chunkInfo);
 				}
+
 			}
 
 			this.client.getProfiler().pop();
 		}
+
 	}
 
 	@Override
 	public void findSpecialChunksToRebuild(Camera camera) {
 		this.client.getProfiler().push("populate_chunks_to_compile");
-		LightingProvider lightingProvider = this.world.getLightingProvider();
 		ChunkRenderRegionCache chunkRenderRegionCache = new ChunkRenderRegionCache();
 		BlockPos blockPos = camera.getBlockPos();
 		List<SpecialChunkBuilder.BuiltChunk> list = Lists.<SpecialChunkBuilder.BuiltChunk>newArrayList();
 
 		for (SpecialChunkBuilder.ChunkInfo chunkInfo : this.specialChunkInfoList) {
 			SpecialChunkBuilder.BuiltChunk builtChunk = chunkInfo.chunk;
-			ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(builtChunk.getOrigin());
+			ChunkPos chunkPos = new ChunkPos(builtChunk.getOrigin());
 
-			if (builtChunk.needsRebuild() && this.world.getChunk(chunkSectionPos.getX(), chunkSectionPos.getZ()).isClientLightReady()) {
+			if (builtChunk.needsRebuild() && this.world.getChunk(chunkPos.x, chunkPos.z).isClientLightReady()) {
 				boolean bl = false;
 
-				if (this.client.options.getPrioritizeChunkUpdates().get() == ChunkUpdatesPrioritization.NEARBY) {
+				if (this.client.options.getPrioritizeChunkUpdates().get() != ChunkUpdatesPrioritization.NEARBY) {
+
+					if (this.client.options.getPrioritizeChunkUpdates().get() == ChunkUpdatesPrioritization.PLAYER_AFFECTED) {
+						bl = builtChunk.needsImportantRebuild();
+					}
+
+				} else {
 					BlockPos blockPos2 = builtChunk.getOrigin().add(8, 8, 8);
 					bl = blockPos2.getSquaredDistance(blockPos) < 768.0 || builtChunk.needsImportantRebuild();
-				} else if (this.client.options.getPrioritizeChunkUpdates().get() == ChunkUpdatesPrioritization.PLAYER_AFFECTED) {
-					bl = builtChunk.needsImportantRebuild();
 				}
 
 				if (bl) {
@@ -649,7 +660,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				} else {
 					list.add(builtChunk);
 				}
+
 			}
+
 		}
 
 		this.client.getProfiler().swap("upload");
@@ -686,8 +699,11 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 				if (l < 15 && (bl || chunkInfo.isAxisAlignedWith(i, j, k)) && chunkInfo.chunk.scheduleSort(modelRenderer, this.specialChunkBuilder)) {
 					++l;
 				}
+
 			}
+
 		}
+
 	}
 
 	@Override
