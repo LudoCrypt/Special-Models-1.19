@@ -17,6 +17,6 @@ in vec4 normal;
 out vec4 fragColor;
 
 void main() {
-	vec4 color = texture(Sampler0, texCoord0) * vertexColor * ColorModulator;
+	vec4 color = textureGrad(Sampler0, texCoord0, dFdx(texCoord0), dFdy(texCoord0)) * vertexColor * ColorModulator;
 	fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

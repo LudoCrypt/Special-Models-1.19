@@ -38,7 +38,8 @@ public abstract class JsonUnbakedModelMixin implements UnbakedModelAccess {
 	private Map<SpecialModelRenderer, Identifier> subModels = Maps.newHashMap();
 
 	@Inject(method = "Lnet/minecraft/client/render/model/json/JsonUnbakedModel;bake(Lnet/minecraft/client/render/model/ModelLoader;Lnet/minecraft/client/render/model/json/JsonUnbakedModel;Ljava/util/function/Function;Lnet/minecraft/client/render/model/ModelBakeSettings;Lnet/minecraft/util/Identifier;Z)Lnet/minecraft/client/render/model/BakedModel;", at = @At("RETURN"), cancellable = true)
-	private void specialModels$bake(ModelLoader loader, JsonUnbakedModel parent, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings settings, Identifier id, boolean hasDepth,
+	private void specialModels$bake(ModelLoader loader, JsonUnbakedModel parent,
+			Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings settings, Identifier id, boolean hasDepth,
 			CallbackInfoReturnable<BakedModel> ci) {
 		this.getSubModels().forEach((modelRenderer, modelId) -> {
 
@@ -53,6 +54,7 @@ public abstract class JsonUnbakedModelMixin implements UnbakedModelAccess {
 			} else {
 				LOGGER.warn("Model '{}' caught in chain! Renderer '{}' caught model '{}'", id, modelRenderer, modelId);
 			}
+
 		});
 	}
 

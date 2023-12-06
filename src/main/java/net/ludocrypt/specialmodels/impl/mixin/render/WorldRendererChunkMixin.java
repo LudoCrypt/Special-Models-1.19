@@ -24,7 +24,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.ludocrypt.specialmodels.api.SpecialModelRenderer;
 import net.ludocrypt.specialmodels.impl.access.WorldChunkBuilderAccess;
 import net.ludocrypt.specialmodels.impl.chunk.SpecialBufferBuilderStorage;
 import net.ludocrypt.specialmodels.impl.chunk.SpecialBuiltChunkStorage;
@@ -101,12 +100,6 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 	private double lastSpecialCameraPitch = Double.MIN_VALUE;
 	@Unique
 	private double lastSpecialCameraYaw = Double.MIN_VALUE;
-	@Unique
-	private double lastSpecialSortX;
-	@Unique
-	private double lastSpecialSortY;
-	@Unique
-	private double lastSpecialSortZ;
 
 	@Inject(method = "setWorld", at = @At("TAIL"))
 	private void specialModels$setWorld(ClientWorld world, CallbackInfo ci) {
@@ -119,7 +112,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 	}
 
 	@Inject(method = "updateBlock", at = @At("TAIL"))
-	private void specialModels$updateBlock(BlockView world, BlockPos pos, BlockState oldState, BlockState newState, int flags, CallbackInfo ci) {
+	private void specialModels$updateBlock(BlockView world, BlockPos pos, BlockState oldState, BlockState newState,
+			int flags, CallbackInfo ci) {
 		this.scheduleSpecialSectionRender(pos, (flags & 8) != 0);
 	}
 
@@ -129,7 +123,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 	}
 
 	@Inject(method = "scheduleBlockRerenderIfNeeded", at = @At("TAIL"))
-	private void specialModels$scheduleBlockRerenderIfNeeded(BlockPos pos, BlockState old, BlockState updated, CallbackInfo ci) {
+	private void specialModels$scheduleBlockRerenderIfNeeded(BlockPos pos, BlockState old, BlockState updated,
+			CallbackInfo ci) {
 
 		if (this.client.getBakedModelManager().shouldRerender(old, updated)) {
 			this.scheduleSpecialBlockRenders(pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
@@ -149,7 +144,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			for (int j = pos.getX() - 1; j <= pos.getX() + 1; ++j) {
 
 				for (int k = pos.getY() - 1; k <= pos.getY() + 1; ++k) {
-					this.scheduleSpecialChunkRender(ChunkSectionPos.getSectionCoord(j), ChunkSectionPos.getSectionCoord(k), ChunkSectionPos.getSectionCoord(i), important);
+					this
+						.scheduleSpecialChunkRender(ChunkSectionPos.getSectionCoord(j), ChunkSectionPos.getSectionCoord(k),
+							ChunkSectionPos.getSectionCoord(i), important);
 				}
 
 			}
@@ -165,7 +162,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			for (int j = minX - 1; j <= maxX + 1; ++j) {
 
 				for (int k = minY - 1; k <= maxY + 1; ++k) {
-					this.scheduleSpecialBlockRender(ChunkSectionPos.getSectionCoord(j), ChunkSectionPos.getSectionCoord(k), ChunkSectionPos.getSectionCoord(i));
+					this
+						.scheduleSpecialBlockRender(ChunkSectionPos.getSectionCoord(j), ChunkSectionPos.getSectionCoord(k),
+							ChunkSectionPos.getSectionCoord(i));
 				}
 
 			}
@@ -227,7 +226,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 		if (this.world != null) {
 
 			if (this.specialChunkBuilder == null) {
-				this.specialChunkBuilder = new SpecialChunkBuilder(this.world, ((WorldRenderer) (Object) this), Util.getMainWorkerExecutor(), this.client.is64Bit(), this.specialBufferBuilderStorage);
+				this.specialChunkBuilder = new SpecialChunkBuilder(this.world, ((WorldRenderer) (Object) this),
+					Util.getMainWorkerExecutor(), this.client.is64Bit(), this.specialBufferBuilderStorage);
 			} else {
 				this.specialChunkBuilder.setWorld(this.world);
 			}
@@ -242,14 +242,16 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			}
 
 			this.specialChunkBuilder.reset();
-			this.specialChunks = new SpecialBuiltChunkStorage(this.specialChunkBuilder, this.world, this.client.options.getEffectiveViewDistance(), ((WorldRenderer) (Object) this));
+			this.specialChunks = new SpecialBuiltChunkStorage(this.specialChunkBuilder, this.world,
+				this.client.options.getEffectiveViewDistance(), ((WorldRenderer) (Object) this));
 
 			if (this.lastFullSpecialBuiltChunkUpdate != null) {
 
 				try {
 					this.lastFullSpecialBuiltChunkUpdate.get();
 					this.lastFullSpecialBuiltChunkUpdate = null;
-				} catch (Exception var3) {}
+				} catch (Exception var3) {
+				}
 
 			}
 
@@ -318,29 +320,35 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 
 		if (!hasForcedFrustum) {
 
-			if (this.needsFullSpecialBuiltChunkUpdate && (this.lastFullSpecialBuiltChunkUpdate == null || this.lastFullSpecialBuiltChunkUpdate.isDone())) {
+			if (this.needsFullSpecialBuiltChunkUpdate && (this.lastFullSpecialBuiltChunkUpdate == null || this.lastFullSpecialBuiltChunkUpdate
+				.isDone())) {
 				this.client.getProfiler().push("full_update_schedule");
 				this.needsFullSpecialBuiltChunkUpdate = false;
 				boolean bl2 = bl;
 				this.lastFullSpecialBuiltChunkUpdate = Util.getMainWorkerExecutor().submit(() -> {
 					Queue<SpecialChunkBuilder.ChunkInfo> queue = Queues.<SpecialChunkBuilder.ChunkInfo>newArrayDeque();
 					this.addSpecialChunksToBuild(camera, queue);
-					SpecialChunkBuilder.RenderableChunks renderableChunksx = new SpecialChunkBuilder.RenderableChunks(this.specialChunks.chunks.length);
-					this.updateSpecialBuiltChunks(renderableChunksx.builtChunks, renderableChunksx.builtChunkMap, vec3d, queue, bl2);
+					SpecialChunkBuilder.RenderableChunks renderableChunksx = new SpecialChunkBuilder.RenderableChunks(
+						this.specialChunks.chunks.length);
+					this
+						.updateSpecialBuiltChunks(renderableChunksx.builtChunks, renderableChunksx.builtChunkMap, vec3d,
+							queue, bl2);
 					this.renderableSpecialChunks.set(renderableChunksx);
 					this.needsSpecialFrustumUpdate.set(true);
 				});
 				this.client.getProfiler().pop();
 			}
 
-			SpecialChunkBuilder.RenderableChunks renderableChunks = (SpecialChunkBuilder.RenderableChunks) this.renderableSpecialChunks.get();
+			SpecialChunkBuilder.RenderableChunks renderableChunks = (SpecialChunkBuilder.RenderableChunks) this.renderableSpecialChunks
+				.get();
 
 			if (!this.recentlyCompiledSpecialChunks.isEmpty()) {
 				this.client.getProfiler().push("partial_update");
 				Queue<SpecialChunkBuilder.ChunkInfo> queue = Queues.<SpecialChunkBuilder.ChunkInfo>newArrayDeque();
 
 				while (!this.recentlyCompiledSpecialChunks.isEmpty()) {
-					SpecialChunkBuilder.BuiltChunk builtChunk = (SpecialChunkBuilder.BuiltChunk) this.recentlyCompiledSpecialChunks.poll();
+					SpecialChunkBuilder.BuiltChunk builtChunk = (SpecialChunkBuilder.BuiltChunk) this.recentlyCompiledSpecialChunks
+						.poll();
 					SpecialChunkBuilder.ChunkInfo chunkInfo = renderableChunks.builtChunkMap.getInfo(builtChunk);
 
 					if (chunkInfo != null && chunkInfo.chunk == builtChunk) {
@@ -349,7 +357,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 
 				}
 
-				this.updateSpecialBuiltChunks(renderableChunks.builtChunks, renderableChunks.builtChunkMap, vec3d, queue, bl);
+				this
+					.updateSpecialBuiltChunks(renderableChunks.builtChunks, renderableChunks.builtChunkMap, vec3d, queue,
+						bl);
 				this.needsSpecialFrustumUpdate.set(true);
 				this.client.getProfiler().pop();
 			}
@@ -357,7 +367,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			double m = Math.floor((double) (camera.getPitch() / 2.0F));
 			double n = Math.floor((double) (camera.getYaw() / 2.0F));
 
-			if (this.needsSpecialFrustumUpdate.compareAndSet(true, false) || m != this.lastSpecialCameraPitch || n != this.lastSpecialCameraYaw) {
+			if (this.needsSpecialFrustumUpdate
+				.compareAndSet(true, false) || m != this.lastSpecialCameraPitch || n != this.lastSpecialCameraYaw) {
 				this.applySpecialFrustum(new Frustum(frustum).offsetToIncludeCamera(8));
 				this.lastSpecialCameraPitch = m;
 				this.lastSpecialCameraYaw = n;
@@ -384,7 +395,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			for (int m = -this.viewDistance; m <= this.viewDistance; ++m) {
 
 				for (int n = -this.viewDistance; n <= this.viewDistance; ++n) {
-					SpecialChunkBuilder.BuiltChunk builtChunk2 = this.specialChunks.getRenderedChunk(new BlockPos(k + ChunkSectionPos.getOffsetPos(m, 8), j, l + ChunkSectionPos.getOffsetPos(n, 8)));
+					SpecialChunkBuilder.BuiltChunk builtChunk2 = this.specialChunks
+						.getRenderedChunk(
+							new BlockPos(k + ChunkSectionPos.getOffsetPos(m, 8), j, l + ChunkSectionPos.getOffsetPos(n, 8)));
 
 					if (builtChunk2 != null) {
 						list.add(new SpecialChunkBuilder.ChunkInfo(builtChunk2, null, 0));
@@ -394,7 +407,9 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 
 			}
 
-			list.sort(Comparator.comparingDouble(chunkInfo -> blockPos.getSquaredDistance(chunkInfo.chunk.getOrigin().add(8, 8, 8))));
+			list
+				.sort(Comparator
+					.comparingDouble(chunkInfo -> blockPos.getSquaredDistance(chunkInfo.chunk.getOrigin().add(8, 8, 8))));
 			chunkInfoQueue.addAll(list);
 		} else {
 			chunkInfoQueue.add(new SpecialChunkBuilder.ChunkInfo(builtChunk, null, 0));
@@ -408,18 +423,24 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 	}
 
 	@Override
-	public void updateSpecialBuiltChunks(LinkedHashSet<ChunkInfo> builtChunks, SpecialChunkBuilder.ChunkInfoListMap builtChunkMap, Vec3d cameraPos, Queue<ChunkInfo> chunksToBuild,
+	public void updateSpecialBuiltChunks(LinkedHashSet<ChunkInfo> builtChunks,
+			SpecialChunkBuilder.ChunkInfoListMap builtChunkMap, Vec3d cameraPos, Queue<ChunkInfo> chunksToBuild,
 			boolean chunkCullingEnabled) {
-		BlockPos blockPos = new BlockPos(MathHelper.floor(cameraPos.x / 16.0) * 16, MathHelper.floor(cameraPos.y / 16.0) * 16, MathHelper.floor(cameraPos.z / 16.0) * 16);
+		BlockPos blockPos = new BlockPos(MathHelper.floor(cameraPos.x / 16.0) * 16,
+			MathHelper.floor(cameraPos.y / 16.0) * 16, MathHelper.floor(cameraPos.z / 16.0) * 16);
 		BlockPos blockPos2 = blockPos.add(8, 8, 8);
-		Entity.setRenderDistanceMultiplier(MathHelper.clamp((double) this.client.options.getEffectiveViewDistance() / 8.0, 1.0, 2.5) * this.client.options.getEntityDistanceScaling().get());
+		Entity
+			.setRenderDistanceMultiplier(MathHelper
+				.clamp((double) this.client.options.getEffectiveViewDistance() / 8.0, 1.0,
+					2.5) * this.client.options.getEntityDistanceScaling().get());
 
 		while (!chunksToBuild.isEmpty()) {
 			ChunkInfo chunkInfo = chunksToBuild.poll();
 			SpecialChunkBuilder.BuiltChunk builtChunk = chunkInfo.chunk;
 			builtChunks.add(chunkInfo);
-			boolean bl = Math.abs(builtChunk.getOrigin().getX() - blockPos.getX()) > 60 || Math.abs(builtChunk.getOrigin().getY() - blockPos.getY()) > 60
-					|| Math.abs(builtChunk.getOrigin().getZ() - blockPos.getZ()) > 60;
+			boolean bl = Math.abs(builtChunk.getOrigin().getX() - blockPos.getX()) > 60 || Math
+				.abs(builtChunk.getOrigin().getY() - blockPos.getY()) > 60 || Math
+					.abs(builtChunk.getOrigin().getZ() - blockPos.getZ()) > 60;
 			Direction[] DIRECTIONS = Direction.values();
 
 			for (Direction direction : DIRECTIONS) {
@@ -433,7 +454,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 
 						for (int j = 0; j < DIRECTIONS.length; ++j) {
 
-							if (chunkInfo.hasDirection(j) && chunkData.isVisibleThrough(DIRECTIONS[j].getOpposite(), direction)) {
+							if (chunkInfo.hasDirection(j) && chunkData
+								.isVisibleThrough(DIRECTIONS[j].getOpposite(), direction)) {
 								bl2 = true;
 								break;
 							}
@@ -519,7 +541,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 						}
 
 						BlockPos blockPos4 = blockPos3.add(var10001, var10002, var10003);
-						Vec3d vec3d = new Vec3d((double) blockPos4.getX(), (double) blockPos4.getY(), (double) blockPos4.getZ());
+						Vec3d vec3d = new Vec3d((double) blockPos4.getX(), (double) blockPos4.getY(),
+							(double) blockPos4.getZ());
 						Vec3d vec3d2 = cameraPos.subtract(vec3d).normalize().multiply(CEIL_CUBEROOT_3_TIMES_16);
 						boolean bl3 = true;
 
@@ -530,7 +553,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 								break;
 							}
 
-							SpecialChunkBuilder.BuiltChunk builtChunk3 = this.specialChunks.getRenderedChunk(new BlockPos(vec3d.x, vec3d.y, vec3d.z));
+							SpecialChunkBuilder.BuiltChunk builtChunk3 = this.specialChunks
+								.getRenderedChunk(new BlockPos(vec3d.x, vec3d.y, vec3d.z));
 
 							if (builtChunk3 == null || builtChunkMap.getInfo(builtChunk3) == null) {
 								bl3 = false;
@@ -572,15 +596,18 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 
 	@Nullable
 	@Override
-	public SpecialChunkBuilder.BuiltChunk getAdjacentSpecialChunk(BlockPos pos, SpecialChunkBuilder.BuiltChunk chunk, Direction direction) {
+	public SpecialChunkBuilder.BuiltChunk getAdjacentSpecialChunk(BlockPos pos, SpecialChunkBuilder.BuiltChunk chunk,
+			Direction direction) {
 		BlockPos blockPos = chunk.getNeighborPosition(direction);
 
 		if (MathHelper.abs(pos.getX() - blockPos.getX()) > this.viewDistance * 16) {
 			return null;
-		} else if (MathHelper.abs(pos.getY() - blockPos.getY()) > this.viewDistance * 16 || blockPos.getY() < this.world.getBottomY() || blockPos.getY() >= this.world.getTopY()) {
+		} else if (MathHelper.abs(pos.getY() - blockPos.getY()) > this.viewDistance * 16 || blockPos.getY() < this.world
+			.getBottomY() || blockPos.getY() >= this.world.getTopY()) {
 			return null;
 		} else {
-			return MathHelper.abs(pos.getZ() - blockPos.getZ()) > this.viewDistance * 16 ? null : this.specialChunks.getRenderedChunk(blockPos);
+			return MathHelper.abs(pos.getZ() - blockPos.getZ()) > this.viewDistance * 16 ? null
+					: this.specialChunks.getRenderedChunk(blockPos);
 		}
 
 	}
@@ -614,7 +641,8 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			this.client.getProfiler().push("apply_frustum");
 			this.specialChunkInfoList.clear();
 
-			for (SpecialChunkBuilder.ChunkInfo chunkInfo : ((SpecialChunkBuilder.RenderableChunks) this.renderableSpecialChunks.get()).builtChunks) {
+			for (SpecialChunkBuilder.ChunkInfo chunkInfo : ((SpecialChunkBuilder.RenderableChunks) this.renderableSpecialChunks
+				.get()).builtChunks) {
 
 				if (frustum.isVisible(chunkInfo.chunk.getBoundingBox())) {
 					this.specialChunkInfoList.add(chunkInfo);
@@ -641,15 +669,13 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 			if (builtChunk.needsRebuild() && this.world.getChunk(chunkPos.x, chunkPos.z).isClientLightReady()) {
 				boolean bl = false;
 
-				if (this.client.options.getPrioritizeChunkUpdates().get() != ChunkUpdatesPrioritization.NEARBY) {
-
-					if (this.client.options.getPrioritizeChunkUpdates().get() == ChunkUpdatesPrioritization.PLAYER_AFFECTED) {
-						bl = builtChunk.needsImportantRebuild();
-					}
-
-				} else {
+				if (this.client.options.getPrioritizeChunkUpdates().get() == ChunkUpdatesPrioritization.NEARBY) {
 					BlockPos blockPos2 = builtChunk.getOrigin().add(8, 8, 8);
 					bl = blockPos2.getSquaredDistance(blockPos) < 768.0 || builtChunk.needsImportantRebuild();
+				} else if (this.client.options
+					.getPrioritizeChunkUpdates()
+					.get() == ChunkUpdatesPrioritization.PLAYER_AFFECTED) {
+					bl = builtChunk.needsImportantRebuild();
 				}
 
 				if (bl) {
@@ -675,35 +701,6 @@ public class WorldRendererChunkMixin implements WorldChunkBuilderAccess {
 		}
 
 		this.client.getProfiler().pop();
-	}
-
-	@Override
-	public void sortLayer(double sortX, double sortY, double sortZ, SpecialModelRenderer modelRenderer) {
-		double d = sortX - this.lastSpecialSortX;
-		double e = sortY - this.lastSpecialSortY;
-		double f = sortZ - this.lastSpecialSortZ;
-
-		if (d * d + e * e + f * f > 1.0) {
-			int i = ChunkSectionPos.getSectionCoord(sortX);
-			int j = ChunkSectionPos.getSectionCoord(sortY);
-			int k = ChunkSectionPos.getSectionCoord(sortZ);
-			boolean bl = i != ChunkSectionPos.getSectionCoord(this.lastSpecialSortX) || k != ChunkSectionPos.getSectionCoord(this.lastSpecialSortZ)
-					|| j != ChunkSectionPos.getSectionCoord(this.lastSpecialSortY);
-			this.lastSpecialSortX = sortX;
-			this.lastSpecialSortY = sortY;
-			this.lastSpecialSortZ = sortZ;
-			int l = 0;
-
-			for (ChunkInfo chunkInfo : this.specialChunkInfoList) {
-
-				if (l < 15 && (bl || chunkInfo.isAxisAlignedWith(i, j, k)) && chunkInfo.chunk.scheduleSort(modelRenderer, this.specialChunkBuilder)) {
-					++l;
-				}
-
-			}
-
-		}
-
 	}
 
 	@Override

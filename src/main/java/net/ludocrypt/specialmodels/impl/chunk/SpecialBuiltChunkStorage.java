@@ -9,6 +9,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 
 public class SpecialBuiltChunkStorage {
+
 	protected final WorldRenderer worldRenderer;
 	protected final World world;
 	protected int sizeY;
@@ -16,7 +17,8 @@ public class SpecialBuiltChunkStorage {
 	protected int sizeZ;
 	public SpecialChunkBuilder.BuiltChunk[] chunks;
 
-	public SpecialBuiltChunkStorage(SpecialChunkBuilder SpecialChunkBuilder, World world, int viewDistance, WorldRenderer worldRenderer) {
+	public SpecialBuiltChunkStorage(SpecialChunkBuilder SpecialChunkBuilder, World world, int viewDistance,
+			WorldRenderer worldRenderer) {
 		this.worldRenderer = worldRenderer;
 		this.world = world;
 		this.setViewDistance(viewDistance);
@@ -24,6 +26,7 @@ public class SpecialBuiltChunkStorage {
 	}
 
 	protected void createChunks(SpecialChunkBuilder SpecialChunkBuilder) {
+
 		if (!MinecraftClient.getInstance().isOnThread()) {
 			throw new IllegalStateException("createChunks called from wrong thread: " + Thread.currentThread().getName());
 		} else {
@@ -31,20 +34,28 @@ public class SpecialBuiltChunkStorage {
 			this.chunks = new SpecialChunkBuilder.BuiltChunk[i];
 
 			for (int j = 0; j < this.sizeX; ++j) {
+
 				for (int k = 0; k < this.sizeY; ++k) {
+
 					for (int l = 0; l < this.sizeZ; ++l) {
 						int m = this.getChunkIndex(j, k, l);
 						this.chunks[m] = SpecialChunkBuilder.new BuiltChunk(m, j * 16, k * 16, l * 16);
 					}
+
 				}
+
 			}
+
 		}
+
 	}
 
 	public void clear() {
+
 		for (SpecialChunkBuilder.BuiltChunk builtChunk : this.chunks) {
 			builtChunk.delete();
 		}
+
 	}
 
 	private int getChunkIndex(int x, int y, int z) {
@@ -76,12 +87,17 @@ public class SpecialBuiltChunkStorage {
 					int t = this.world.getBottomY() + s * 16;
 					SpecialChunkBuilder.BuiltChunk builtChunk = this.chunks[this.getChunkIndex(k, s, o)];
 					BlockPos blockPos = builtChunk.getOrigin().toImmutable();
+
 					if (n != blockPos.getX() || t != blockPos.getY() || r != blockPos.getZ()) {
 						builtChunk.setOrigin(n, t, r);
 					}
+
 				}
+
 			}
+
 		}
+
 	}
 
 	public void scheduleRebuild(int x, int y, int z, boolean important) {
@@ -97,6 +113,7 @@ public class SpecialBuiltChunkStorage {
 		int i = MathHelper.floorDiv(pos.getX(), 16);
 		int j = MathHelper.floorDiv(pos.getY() - this.world.getBottomY(), 16);
 		int k = MathHelper.floorDiv(pos.getZ(), 16);
+
 		if (j >= 0 && j < this.sizeY) {
 			i = MathHelper.floorMod(i, this.sizeX);
 			k = MathHelper.floorMod(k, this.sizeZ);
@@ -104,5 +121,7 @@ public class SpecialBuiltChunkStorage {
 		} else {
 			return null;
 		}
+
 	}
+
 }

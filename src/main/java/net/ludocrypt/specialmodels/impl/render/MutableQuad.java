@@ -1,5 +1,4 @@
 package net.ludocrypt.specialmodels.impl.render;
-
 public class MutableQuad {
 
 	private MutableVertice v1;

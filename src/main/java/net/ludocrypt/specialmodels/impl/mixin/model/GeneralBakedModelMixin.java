@@ -45,6 +45,7 @@ public class GeneralBakedModelMixin implements BakedModelAccess {
 
 			list.add(Pair.of(modelRenderer, model));
 		}
+
 	}
 
 }

@@ -7,10 +7,6 @@ base.archivesName = project.archives_base_name
 version = "$project.version+${libs.versions.minecraft.get()}"
 group = project.maven_group
 
-loom {
-	accessWidenerPath = file("src/main/resources/specialmodels.accesswidener")
-}
-
 dependencies {
 	minecraft libs.minecraft
 	mappings loom.layered {
